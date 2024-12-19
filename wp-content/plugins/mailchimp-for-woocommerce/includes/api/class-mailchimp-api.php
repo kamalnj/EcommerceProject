@@ -9,6 +9,8 @@ class MailChimp_WooCommerce_MailChimpApi {
 	protected $data_center = 'us2';
 	protected $api_key     = null;
 	protected $auth_type   = 'key';
+    protected $allow_audience_put = true;
+    protected $auto_doi = false;
 
 	/** @var null|MailChimp_WooCommerce_MailChimpApi */
 	protected static $instance = null;
@@ -39,6 +41,26 @@ class MailChimp_WooCommerce_MailChimpApi {
 			$this->setApiKey( $api_key );
 		}
 	}
+
+    /**
+     * @param $bool
+     * @return $this
+     */
+    public function allowingCustomerPuts($bool)
+    {
+        $this->allow_audience_put = (bool) $bool;
+        return $this;
+    }
+
+    /**
+     * @param $auto
+     * @return $this
+     */
+    public function useAutoDoi($auto)
+    {
+        $this->auto_doi = (bool) $auto;
+        return $this;
+    }
 
 	/**
 	 * @param $key
@@ -243,6 +265,11 @@ class MailChimp_WooCommerce_MailChimpApi {
             $status = $subscribed;
         }
 
+        if ($status === 'pending') {
+            $this->auto_doi = true;
+            $status = 'subscribed';
+        }
+
 		$data = $this->cleanListSubmission(
 			array(
 				'email_type'            => 'html',
@@ -272,7 +299,9 @@ class MailChimp_WooCommerce_MailChimpApi {
 			$result         = $this->post( "lists/$list_id/members?skip_merge_validation=true", $data );
 			mailchimp_log( 'api', "{$email} was in compliance state, sending the double opt in message" );
 			return $result;
-		}
+		} finally {
+            $this->auto_doi = false;
+        }
 	}
 
 	/**
@@ -289,7 +318,7 @@ class MailChimp_WooCommerce_MailChimpApi {
 	 * @throws MailChimp_WooCommerce_RateLimitError
 	 * @throws MailChimp_WooCommerce_ServerError
 	 */
-	public function update( $list_id, $email, $subscribed = '1', $merge_fields = array(), $list_interests = array(), $language = null, $gdpr_fields = null ) {
+	public function update( $list_id, $email, $subscribed = '1', $merge_fields = array(), $list_interests = array(), $language = null, $gdpr_fields = null, $only_if_new = false ) {
 		$hash = md5( strtolower( trim( $email ) ) );
 
 		if ( $subscribed === '1' ) {
@@ -302,24 +331,41 @@ class MailChimp_WooCommerce_MailChimpApi {
 			$status = $subscribed;
 		}
 
-		$data = $this->cleanListSubmission(
-			array(
-				'email_address'         => $email,
-				'status'                => $status,
-				'merge_fields'          => $merge_fields,
-				'interests'             => $list_interests,
-				'language'              => $language,
-				'marketing_permissions' => $gdpr_fields,
-			)
-		);
+        if ($status === 'pending') {
+            $this->auto_doi = true;
+            $status = 'subscribed';
+        }
+
+        $payload = array(
+            'email_address'         => $email,
+            'status'                => $status,
+            'merge_fields'          => $merge_fields,
+            'interests'             => $list_interests,
+            'language'              => $language,
+            'marketing_permissions' => $gdpr_fields,
+        );
+
+        if ($only_if_new === true) {
+            unset($payload['status']);
+            $payload['status_if_new'] = $status;
+        }
+
+		$data = $this->cleanListSubmission($payload);
 
 		$this->validateNaughtyListEmail( $email );
+
+        $data['added_auto_doi'] = $this->auto_doi;
 
 		mailchimp_debug( 'api.update_member', "Updating {$email}", $data );
 
 		try {
-			return $this->put( "lists/$list_id/members/$hash?skip_merge_validation=true", $data );
+            $endpoint = "lists/$list_id/members/$hash?skip_merge_validation=true";
+			return $this->allow_audience_put ? $this->put( $endpoint, $data ) : $this->patch( $endpoint, $data );
 		} catch ( Exception $e ) {
+            // if we're not allowing audience puts
+            if (!$this->allow_audience_put && $e->getCode() === 404) {
+                throw $e;
+            }
 
 			// If mailchimp says is already a member lets send the update by PUT
 			if ( mailchimp_string_contains( $e->getMessage(), 'is already a list member' ) ) {
@@ -332,8 +378,9 @@ class MailChimp_WooCommerce_MailChimpApi {
 			$result         = $this->patch( "lists/$list_id/members/$hash?skip_merge_validation=true", $data );
 			mailchimp_log( 'api', "{$email} was in compliance state, sending the double opt in message" );
 			return $result;
-
-		}
+		} finally {
+            $this->auto_doi = false;
+        }
 	}
 
 	/**
@@ -424,6 +471,21 @@ class MailChimp_WooCommerce_MailChimpApi {
 		}
 		return $this->get( "lists/{$list_id}/members?status=transactional&count=1" )['total_items'];
 	}
+
+    /**
+     * @param $list_id
+     *
+     * @return int|mixed
+     * @throws MailChimp_WooCommerce_Error
+     * @throws MailChimp_WooCommerce_RateLimitError
+     * @throws MailChimp_WooCommerce_ServerError
+     */
+    public function getPendingCount( $list_id ) {
+        if ( empty( $list_id ) ) {
+            return 0;
+        }
+        return $this->get( "lists/{$list_id}/members?status=pending&count=1" )['total_items'];
+    }
 
 
 	/**
@@ -517,7 +579,15 @@ class MailChimp_WooCommerce_MailChimpApi {
 
 		mailchimp_debug( 'api.update_or_create', "Update Or Create {$email}", $data );
 
-		return $this->put( "lists/$list_id/members/$hash", $data );
+		$member = $this->put( "lists/$list_id/members/$hash", $data );
+
+        /// update this for use with the admin view too.
+        if (!empty($member) && !empty($member['status'])) {
+            $transient  = "mailchimp-woocommerce-subscribed.{$list_id}.{$hash}";
+            \Mailchimp_Woocommerce_DB_Helpers::set_transient( $transient, $member['status'], 60 * 5 );
+        }
+
+        return $member;
 	}
 
 	/**
@@ -1463,7 +1533,7 @@ class MailChimp_WooCommerce_MailChimpApi {
 			if ( ! $this->validateStoreSubmission( $product ) ) {
 				return false;
 			}
-			$data = $this->patch( "ecommerce/stores/$store_id/products/{$product->getId()}", $product->toArray() );
+			$data = $this->put( "ecommerce/stores/$store_id/products/{$product->getId()}", $product->toArray() );
 			\Mailchimp_Woocommerce_DB_Helpers::update_option( 'mailchimp-woocommerce-resource-last-updated', time() );
 			$product = new MailChimp_WooCommerce_Product();
 			return $product->fromArray( $data );
@@ -2359,10 +2429,7 @@ class MailChimp_WooCommerce_MailChimpApi {
 			'PATCH',
 			$url,
 			array(),
-			array(
-				'Expect:',
-				'Content-Length: ' . strlen( $json ),
-			)
+            $this->getHeadersForPostOrPut($json)
 		);
 
 		$options[ CURLOPT_POSTFIELDS ] = $json;
@@ -2390,10 +2457,7 @@ class MailChimp_WooCommerce_MailChimpApi {
 			'POST',
 			$url,
 			array(),
-			array(
-				'Expect:',
-				'Content-Length: ' . strlen( $json ),
-			)
+            $this->getHeadersForPostOrPut($json)
 		);
 
 		$options[ CURLOPT_POSTFIELDS ] = $json;
@@ -2402,6 +2466,24 @@ class MailChimp_WooCommerce_MailChimpApi {
 
 		return $this->processCurlResponse( $curl );
 	}
+
+    /**
+     * @param $json
+     * @return string[]
+     */
+    protected function getHeadersForPostOrPut($json)
+    {
+        $headers = array(
+            'Expect:',
+            'Content-Length: ' . strlen( $json ),
+        );
+
+        if ($this->auto_doi) {
+            $headers[] = 'X-Status-Resolution-Method: auto-doi';
+        }
+
+        return $headers;
+    }
 
 	/**
 	 * @param $url
@@ -2421,10 +2503,7 @@ class MailChimp_WooCommerce_MailChimpApi {
 			'PUT',
 			$url,
 			array(),
-			array(
-				'Expect:',
-				'Content-Length: ' . strlen( $json ),
-			)
+            $this->getHeadersForPostOrPut($json)
 		);
 
 		$options[ CURLOPT_POSTFIELDS ] = $json;
@@ -2464,6 +2543,20 @@ class MailChimp_WooCommerce_MailChimpApi {
 	 */
 	protected function applyCurlOptions( $method, $url, $params = array(), $headers = array() ) {
 		$env          = mailchimp_environment_variables();
+
+        $headers = array_merge(
+            array(
+                'content-type: application/json',
+                'accept: application/json',
+                "user-agent: MailChimp for WooCommerce/{$env->version}; PHP/{$env->php_version}; WordPress/{$env->wp_version}; Woo/{$env->wc_version};",
+            ),
+            $headers
+        );
+
+        if ($this->auto_doi) {
+            mailchimp_debug('api', "applied doi headers", $headers);
+        }
+
 		$curl_options = array(
 			CURLOPT_USERPWD        => "mailchimp:{$this->api_key}",
 			CURLOPT_CUSTOMREQUEST  => strtoupper( $method ),
@@ -2474,14 +2567,7 @@ class MailChimp_WooCommerce_MailChimpApi {
 			CURLOPT_TIMEOUT        => 30,
 			CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
 			CURLINFO_HEADER_OUT    => true,
-			CURLOPT_HTTPHEADER     => array_merge(
-				array(
-					'content-type: application/json',
-					'accept: application/json',
-					"user-agent: MailChimp for WooCommerce/{$env->version}; PHP/{$env->php_version}; WordPress/{$env->wp_version}; Woo/{$env->wc_version};",
-				),
-				$headers
-			),
+			CURLOPT_HTTPHEADER     => $headers,
 		);
 
 		// automatically set the proper outbound IP address
@@ -2510,6 +2596,11 @@ class MailChimp_WooCommerce_MailChimpApi {
 
 		$err  = curl_error( $curl );
 		$info = curl_getinfo( $curl );
+
+        if ($this->auto_doi) {
+            mailchimp_debug('api.debug', 'message headers', ['headers' => $info['request_header']]);
+        }
+
 		curl_close( $curl );
 
 		if ( $err ) {

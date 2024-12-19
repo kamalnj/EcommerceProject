@@ -1,7 +1,18 @@
 *** Google for WooCommerce Changelog ***
 
+= 2.9.3 - 2024-12-18 =
+* Dev - Eliminate the duplicate functions used to group shipping time data.
+* Dev - Improve E2E tests for related products.
+* Fix - Budget Recommendation data not populating on install.
+* Fix - PHP 8.4 package compatibility.
+* Fix - Prevent duplicate conversion and purchase event tracking.
+* Fix - The saved max shipping time is not showing after revisiting the free listings editing page.
+* Tweak - Drop Jetpack packages and switch to packages bundled with WooCommerce.
+* Tweak - WC 9.5 compatibility.
+* Update - Drop support for WooCommerce < 7.9.
+
 = 2.9.2 - 2024-12-11 =
-* Dev - Centralize frontend end images to the dedicated directory.
+* Dev - Centralize frontend images to the dedicated directory.
 * Fix - Ensure coupon brand restrictions are uploaded to Google Merchant Center.
 * Fix - Initial php 8.4 compatibility.
 * Fix - Prevent Warning when Saving a Variation if YOAST is activated.

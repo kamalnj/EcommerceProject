@@ -38,6 +38,7 @@ use Google\Ads\GoogleAds\V16\Services\Client\ConversionActionServiceClient;
 use Google\Ads\GoogleAds\V16\Services\Client\CustomerServiceClient;
 use Google\Ads\GoogleAds\V16\Services\Client\CustomerUserAccessServiceClient;
 use Google\Ads\GoogleAds\V16\Services\Client\ExtensionFeedItemServiceClient;
+use Google\Ads\GoogleAds\V16\Services\Client\GoogleAdsServiceClient;
 use Google\Ads\GoogleAds\V16\Services\Client\LabelServiceClient;
 use Google\Ads\GoogleAds\V16\Services\Client\ProductLinkInvitationServiceClient;
 
@@ -403,7 +404,7 @@ final class ResourceNames
     public static function forGeoTargetConstant(
         $criterionId
     ): string {
-        return ExtensionFeedItemServiceClient::geoTargetConstantName(
+        return GoogleAdsServiceClient::geoTargetConstantName(
             $criterionId
         );
     }

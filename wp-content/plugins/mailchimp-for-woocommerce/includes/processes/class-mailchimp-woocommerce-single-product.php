@@ -128,37 +128,12 @@ class MailChimp_WooCommerce_Single_Product extends Mailchimp_Woocommerce_Job
             return false;
         }
 
-        $method = "no action";
+        $method = "upsert";
 
         try {
 
             if( !($product_post = MailChimp_WooCommerce_HPOS::get_product($this->id)) ){
-                return false;
-            }
-            /*if (!($product_post = get_post($this->id))) {
-                return false;
-            }*/
-
-            try {
-                // pull the product from Mailchimp first to see what method we need to call next.
-                $mailchimp_product = $this->api()->getStoreProduct($this->store_id, $this->id, true);
-            } catch (Exception $e) {
-                if ($e instanceof MailChimp_WooCommerce_RateLimitError) {
-                    throw $e;
-                }
-                $mailchimp_product = false;
-            }
-
-            // depending on if it's existing or not - we change the method call
-            $method = $mailchimp_product ? 'updateStoreProduct' : 'addStoreProduct';
-
-            // if the mode set is "create" and the product is in Mailchimp - just return the product.
-            if ($this->mode === 'create' && !empty($mailchimp_product)) {
-                return $mailchimp_product;
-            }
-
-            // if the mode is set to "update" and the product is not currently in Mailchimp - skip it.
-            if ($this->mode === 'update' && empty($mailchimp_product)) {
+                mailchimp_log('product', "tried to load product by ID {$this->id} but did not find it.");
                 return false;
             }
 
@@ -182,10 +157,11 @@ class MailChimp_WooCommerce_Single_Product extends Mailchimp_Woocommerce_Job
             }
 
             // either updating or creating the product
-            $this->api()->{$method}($this->store_id, $product, false);
+            $this->api()->updateStoreProduct($this->store_id, $product, false);
 
             mailchimp_log('product_submit.success', "{$method} :: #{$product->getId()}");
-
+            // increment the sync counter
+            mailchimp_register_synced_resource('products');
             \Mailchimp_Woocommerce_DB_Helpers::update_option('mailchimp-woocommerce-last_product_updated', $product->getId());
 
             return $product;

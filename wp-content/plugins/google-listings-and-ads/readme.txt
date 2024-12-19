@@ -5,7 +5,7 @@ Requires at least: 5.9
 Tested up to: 6.7
 Requires PHP: 7.4
 Requires PHP Architecture: 64 Bits
-Stable tag: 2.9.2
+Stable tag: 2.9.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -52,7 +52,7 @@ Once you’re running Google Ads campaigns, the Google tag feature in the extens
 = Minimum Requirements =
 
 * WordPress 5.9 or greater
-* WooCommerce 6.9 or greater
+* WooCommerce 7.9 or greater
 * PHP version 7.4 or greater
 * PHP Architecture 64 bits
 * MySQL version 5.6 or greater
@@ -140,8 +140,19 @@ To allow your products to appear in all relevant locations, make sure you’ve c
 
 == Changelog ==
 
+= 2.9.3 - 2024-12-18 =
+* Dev - Eliminate the duplicate functions used to group shipping time data.
+* Dev - Improve E2E tests for related products.
+* Fix - Budget Recommendation data not populating on install.
+* Fix - PHP 8.4 package compatibility.
+* Fix - Prevent duplicate conversion and purchase event tracking.
+* Fix - The saved max shipping time is not showing after revisiting the free listings editing page.
+* Tweak - Drop Jetpack packages and switch to packages bundled with WooCommerce.
+* Tweak - WC 9.5 compatibility.
+* Update - Drop support for WooCommerce < 7.9.
+
 = 2.9.2 - 2024-12-11 =
-* Dev - Centralize frontend end images to the dedicated directory.
+* Dev - Centralize frontend images to the dedicated directory.
 * Fix - Ensure coupon brand restrictions are uploaded to Google Merchant Center.
 * Fix - Initial php 8.4 compatibility.
 * Fix - Prevent Warning when Saving a Variation if YOAST is activated.
@@ -152,49 +163,5 @@ To allow your products to appear in all relevant locations, make sure you’ve c
 * Fix - Prevent translations from being called early.
 * Fix - The initial values of the form on free listings editing page may be empty.
 * Update - New shipping settings.
-
-= 2.9.0 - 2024-11-26 =
-* Add - Add GTIN Migration Job.
-* Add - Banner for GTIN MIgration.
-* Add - Confirmation modal when user skips without creating a campaign during onboarding.
-* Add - During onboarding, automatically create Google Merchant Center or Google Ads accounts when the connected Google account doesn't have a respective existing one.
-* Add - GTIN Migration API Controller.
-* Add - Show promotion for Google Ads campaign on the Dashboard page.
-* Add - Show promotion for Google Ads campaign on the Product Feed page.
-* Add - Support YOAST SEO GTIN field in the migration tools.
-* Add - WP CLI Command for GTIN Migration.
-* Dev - Adding tests for GTIN migration tool.
-* Dev - Tweak E2E tests for GTIN migration in versions > 2.8.7.
-* Fix - Add margin for separating notices in the admin.
-* Fix - Hide or disable  GTIN in Product Block editor.
-* Fix - Hide/disable GTIN also when YOAST is active.
-* Fix - Prevent fatal in GTIN MIgration AS Job.
-* Fix rebranding tour on mobile.
-* Tweak -  Prepare GTIN with the correct format before sending it to MC.
-* Tweak - Adjust plugin version to hide GTIN.
-* Tweak - Change to use a banner to present the ad credit offer during onboarding.
-* Tweak - Move FAQs to the bottom of pages.
-* Tweak - Remove the word "Paid" from the plugin.
-* Tweak - Remove unused methods from ProductMetaQueryHelper.
-* Tweak - Set the default value of the tax rate to destination-based during onboarding.
-* Tweak - Show campaign setup fields immediately during onboarding.
-* Tweak - Swap performance cards on the Dashboard page.
-* Update - Adjust the minimum average daily cost of a campaign to 30% of the highest recommended value among audience countries.
-* Update - Automatically preselect a Google Ads account when there is only one, as well as adjust the UI presentation.
-* Update - Change the campaign setup and creation to use the recommended budget as the initial value and adjust its description.
-* Update - Consolidate the campaign setup UI in the onboarding flow with the one in the Ads-onboarding flow.
-* Update - Hide or disable GTIN field in favor of the new native GTIN located in the WooCommerce Product Inventory tab.
-* Update - Hides WordPress.com account connection setting from the onboarding flow if already connected.
-* Update - Hides the tax rate setting during onboarding.
-* Update - Introduce new UI for Google accounts setup during the onboarding.
-* Update - Merge the billing setup into the campaign setup for the Ads-onboarding flow.
-* Update - Merge the store address setting in Step 3 of the onboarding flow into Step 1 and remove Step 3 along with the contact phone verification.
-* Update - Product adapter to map GTIN value from WooCommerce core field if it's available.
-* Update - Remove ads audience field from paid ads setup during onboarding.
-* Update - Remove the Pre-Launch Checklist from the onboarding flow.
-* Update - Remove the contact phone from the Settings page.
-* Update - Remove the language setting from onboarding.
-* Update - Restrict the GTIN field based on the version of WooCommerce installed and the initial version of G4W installed.
-* Update - When the accounts have been connected before, skip accounts setup step during the Ads-onboarding.
 
 [See changelog for all versions](https://raw.githubusercontent.com/woocommerce/google-listings-and-ads/trunk/changelog.txt).

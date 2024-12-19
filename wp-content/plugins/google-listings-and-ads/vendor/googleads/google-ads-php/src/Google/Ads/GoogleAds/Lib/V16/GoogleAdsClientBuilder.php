@@ -46,7 +46,6 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
     private const DEFAULT_LOGGER_CHANNEL = 'google-ads';
     private const DEFAULT_GRPC_CHANNEL_IS_SECURE = true;
     private const DEFAULT_USE_CLOUD_ORG_FOR_API_ACCESS = false;
-    private const DEFAULT_USE_GAPIC_V2_SOURCE = false;
 
     private $loggerFactory;
 
@@ -62,10 +61,10 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
     private $transport;
     private $grpcChannelIsSecure;
     private $grpcChannelCredential;
-    private $useGapicV2Source;
     private $unaryMiddlewares = [];
     private $streamingMiddlewares = [];
     private $grpcInterceptors = [];
+    private $httpHandler =  null;
     /** @var Dependencies $dependencies */
     private $dependencies;
 
@@ -125,19 +124,6 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
                     // Defaults when value is not a valid boolean.
                     [
                         'options' => ['default' => self::DEFAULT_GRPC_CHANNEL_IS_SECURE],
-                        'flags' => FILTER_NULL_ON_FAILURE
-                    ]
-                );
-        $this->useGapicV2Source =
-            is_null($configuration->getConfiguration('useGapicV2Source', 'GAPIC'))
-            || $configuration->getConfiguration('useGapicV2Source', 'GAPIC') === ""
-                ? self::DEFAULT_USE_GAPIC_V2_SOURCE
-                : filter_var(
-                    $configuration->getConfiguration('useGapicV2Source', 'GAPIC'),
-                    FILTER_VALIDATE_BOOLEAN,
-                    // Defaults when value is not a valid boolean.
-                    [
-                        'options' => ['default' => self::DEFAULT_USE_GAPIC_V2_SOURCE],
                         'flags' => FILTER_NULL_ON_FAILURE
                     ]
                 );
@@ -323,18 +309,6 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
     }
 
     /**
-     * Sets whether this library should use GAPIC v2 source code or not.
-     *
-     * @param bool $useGapicV2Source
-     * @return self this builder
-     */
-    public function usingGapicV2Source(bool $useGapicV2Source)
-    {
-        $this->useGapicV2Source = $useGapicV2Source;
-        return $this;
-    }
-
-    /**
      * Sets the unary middlewares for Google Ads API requests. They execute in order after the ones
      * defined by the library.
      *
@@ -370,6 +344,18 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
     public function withGrpcInterceptors(Interceptor ...$grpcInterceptors)
     {
         $this->grpcInterceptors = $grpcInterceptors;
+        return $this;
+    }
+
+    /**
+     * Sets the REST HTTP handler for Google Ads API requests.
+     *
+     * @param callable $httpHandler the HTTP handler
+     * @return self this builder
+     */
+    public function withHttpHandler(callable $httpHandler)
+    {
+        $this->httpHandler = $httpHandler;
         return $this;
     }
 
@@ -626,16 +612,6 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
     }
 
     /**
-     * Returns true when this library is set to use GAPIC v2 source.
-     *
-     * @return bool
-     */
-    public function useGapicV2Source()
-    {
-        return $this->useGapicV2Source;
-    }
-
-    /**
      * Gets the Google Ads unary middlewares.
      *
      * @return GoogleAdsMiddlewareAbstract[] the Google Ads unary middlewares
@@ -663,5 +639,15 @@ final class GoogleAdsClientBuilder extends AbstractGoogleAdsBuilder
     public function getGrpcInterceptors()
     {
         return $this->grpcInterceptors;
+    }
+
+    /**
+     * Gets the REST HTTP handler.
+     *
+     * @return callable|null the REST HTTP handler
+     */
+    public function getHttpHandler()
+    {
+        return $this->httpHandler;
     }
 }

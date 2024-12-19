@@ -291,6 +291,9 @@ class MailChimp_WooCommerce
         // delete log file via ajax
         $this->loader->add_action( 'wp_ajax_mailchimp_woocommerce_delete_log_file', $plugin_admin, 'mailchimp_woocommerce_ajax_delete_log_file' );
 
+        // toggle the chipmstatic script
+        $this->loader->add_action( 'wp_ajax_mailchimp_woocommerce_toggle_chimpstatic_script', $plugin_admin, 'mailchimp_woocommerce_ajax_toggle_chimpstatic_script' );
+
         // send event to mailchimp
         $this->loader->add_action( 'wp_ajax_mailchimp_woocommerce_send_event', $plugin_admin, 'mailchimp_woocommerce_send_event' );
 
@@ -422,6 +425,7 @@ class MailChimp_WooCommerce
             $this->loader->add_action('woocommerce_trash_coupon', $service, 'handlePostTrashed');
             
             $this->loader->add_action('woocommerce_rest_delete_shop_coupon_object', $service, 'handleAPICouponTrashed', 10, 3);
+            $this->loader->add_action('woocommerce_rest_insert_shop_coupon_object', $service, 'handleAPICouponUpdated', 10, 3);
 
 			// handle the user registration hook
 			$this->loader->add_action('user_register', $service, 'handleUserRegistration');

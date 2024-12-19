@@ -50,10 +50,10 @@ class GoogleAdsClient
         $this->transport = $builder->getTransport();
         $this->grpcChannelIsSecure = $builder->getGrpcChannelIsSecure();
         $this->grpcChannelCredential = $builder->getGrpcChannelCredential();
-        $this->useGapicV2Source = $builder->useGapicV2Source();
         $this->unaryMiddlewares = $builder->getUnaryMiddlewares();
         $this->streamingMiddlewares = $builder->getStreamingMiddlewares();
         $this->grpcInterceptors = $builder->getGrpcInterceptors();
+        $this->httpHandler = $builder->getHttpHandler();
 
         // Initializes preemptively the GoogleAdsFailures type when
         // gRPC is not available.

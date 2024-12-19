@@ -104,7 +104,7 @@ SQL;
 		if ( file_exists( $path ) ) {
 			$csv = array_map(
 				function ( $row ) {
-					str_getcsv( $row, ',', '"', '\\' );
+					return str_getcsv( $row, ',', '"', '\\' );
 				},
 				file( $path )
 			);

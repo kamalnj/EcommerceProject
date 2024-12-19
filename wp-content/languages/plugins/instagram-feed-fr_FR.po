@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Plugins - Smash Balloon Social Photo Feed – Easy Social Feeds Plugin - Stable (latest release) package.
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-07 18:51:31+0000\n"
+"PO-Revision-Date: 2024-12-17 13:50:30+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -14,6 +14,54 @@ msgstr ""
 #: inc/Builder/SBI_Feed_Builder.php:896
 msgid "As of December 2024, the personal account connection type will no longer work. Reconnect as a business account to continue using the plugin."
 msgstr "À partir de décembre 2024, le type de connexion du compte personnel ne fonctionnera plus. Reconnectez-vous en tant que compte professionnel pour continuer à utiliser l’extension."
+
+#: inc/Builder/SBI_Feed_Builder.php:895
+msgid "Action required. Reconnect as a business account. <strong><u>Why?</u></strong>"
+msgstr "Action requise. Reconnectez-vous en tant que compte professionnel. <strong><u>Pourquoi ?</u></strong>"
+
+#: admin/SBI_Admin_Notices.php:464
+msgid "Update Sources"
+msgstr "Mettre à jour les sources"
+
+#: admin/SBI_Admin_Notices.php:452
+msgid "Due to changes by Instagram, all “Personal” accounts will stop working as of December 2024. To continue to use the plugin, reconnect all personal accounts as a “Business” account."
+msgstr "En raison des modifications apportées par Instagram, tous les comptes « Personnel » cesseront de fonctionner à partir de décembre 2024. Pour continuer à utiliser l’extension, reconnectez tous les comptes personnels en tant que compte « Professionnel »."
+
+#: admin/SBI_Admin_Notices.php:451
+msgid "Deprecation notice"
+msgstr "Notification d’obsolescence"
+
+#: admin/SBI_Global_Settings.php:1023
+msgid "JPG"
+msgstr "JPG"
+
+#: admin/SBI_Global_Settings.php:1022
+msgid "WebP"
+msgstr "WebP"
+
+#: admin/SBI_Global_Settings.php:1020
+msgid "Default Image Format"
+msgstr "Format d’image par défaut"
+
+#: admin/SBI_Global_Settings.php:1019
+msgid "Use dynamic sizes"
+msgstr "Utiliser des tailles dynamiques"
+
+#: admin/SBI_Global_Settings.php:1018
+msgid "Reset Image Storage"
+msgstr "Réinitialiser le stockage des images"
+
+#: admin/SBI_Global_Settings.php:1017
+msgid "Uses local Wordpress storage."
+msgstr "Utilise le stockage local de WordPress."
+
+#: admin/SBI_Global_Settings.php:1017
+msgid "Creates multiple local copies of image in different sizes and uses smallest size based on where it is displayed. "
+msgstr "Crée plusieurs copies locales de l’image dans différentes tailles et utilise la taille la plus petite en fonction de l’endroit où elle est affichée. "
+
+#: admin/SBI_Global_Settings.php:1016
+msgid "Image Optimization (Recommended)"
+msgstr "Optimisation des images (recommandé)"
 
 #: inc/admin/SBI_Onboarding_wizard.php:471
 msgid "Enabling this feature will install Reviews Feed plugin. Reviews Feed by Smash Balloon helps users to display reviews from Google, TripAdvisor, TrustPilot and more."
@@ -221,7 +269,7 @@ msgstr "Aucun flux trouvé."
 
 #: admin/views/support/support-tools.php:98
 msgid "Post Limit"
-msgstr "Limite des publications"
+msgstr "Nombre maximal de publications"
 
 #: admin/views/support/support-tools.php:82
 msgid "Get Media (%s)"
@@ -3033,7 +3081,7 @@ msgstr "Votre licence <b>Instagram Feed Pro</b> est activée !"
 
 #: admin/SBI_Global_Settings.php:916
 msgid "Your license key provides access to updates and support"
-msgstr "Votre clé de licence débloque les mises à jour et le support"
+msgstr "Avec votre clé de licence, vous bénéficiez des mises à jour et du support."
 
 #: admin/SBI_Global_Settings.php:915
 msgid "License Key"

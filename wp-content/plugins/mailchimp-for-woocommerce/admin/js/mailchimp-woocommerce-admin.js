@@ -176,6 +176,34 @@
 			});
 		});
 
+		let executing_chimpstatic = false;
+
+		$('#mailchimp_woocommerce_toggle_chimpstatic_script').off('click').on('click', function(e) {
+			e.preventDefault();
+			if (executing_chimpstatic) {
+				console.log("preventing duplicate button clicks for chimpstatic script");
+				return null;
+			}
+			executing_chimpstatic = true;
+
+			Swal.fire({
+				title: phpVars.l10n.toggling_chimpstatic_in_progress,
+				onBeforeOpen: () => {
+					Swal.showLoading()
+				}
+			});
+
+			var data = {
+				action:'mailchimp_woocommerce_toggle_chimpstatic_script',
+			};
+
+			console.log('about to toggle mailchimp script options');
+			$.post(ajaxurl, data, function(response) {
+				console.log('toggled mailchimp script', data.status);
+				window.location.reload();
+			});
+		});
+
 		/*
 		* Shows dialog on store disconnect
 		* Change wp_http_referer URL in case of store disconnect

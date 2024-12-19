@@ -104,7 +104,7 @@ function mailchimp_environment_variables() {
     return (object) array(
         'repo' => 'master',
         'environment' => 'production', // staging or production
-        'version' => '4.4.1',
+        'version' => '5.0',
         'php_version' => phpversion(),
         'wp_version' => (empty($wp_version) ? 'Unknown' : $wp_version),
         'wc_version' => function_exists('WC') ? WC()->version : null,
@@ -140,7 +140,7 @@ function mailchimp_as_push( Mailchimp_Woocommerce_Job $job, $delay = 0 ) {
                 'group' => 'mc-woocommerce'
             )
         ) : null;
-        
+
         if (!empty($existing_actions)) {
             try {
                 as_unschedule_action(get_class($job), array('obj_id' => $job->id), 'mc-woocommerce');
@@ -149,6 +149,9 @@ function mailchimp_as_push( Mailchimp_Woocommerce_Job $job, $delay = 0 ) {
         else {
             $inserted = $wpdb->insert($wpdb->prefix."mailchimp_jobs", $args);
             if (!$inserted) {
+                if ($wpdb->last_error) {
+                    mailchimp_debug('database error on mailchimp_jobs insert', $wpdb->last_error);
+                }
                 try {
                     if (mailchimp_string_contains($wpdb->last_error, 'Table')) {
                         mailchimp_debug('DB Issue: `mailchimp_job` table was not found!', 'Creating Tables');
@@ -172,18 +175,29 @@ function mailchimp_as_push( Mailchimp_Woocommerce_Job $job, $delay = 0 ) {
             $action_args['page'] = $current_page;
         }
 
-        $action = as_schedule_single_action( strtotime( '+'.$delay.' seconds' ), get_class($job), $action_args, "mc-woocommerce");
+        // create the action to be handled in X seconds ( default time )
+        $fire_at = strtotime( '+'.$delay.' seconds' );
+        // if we have a prepend command, that means it's live traffic, put it to the front of the sync process.
+        if (isset($job->prepend_to_queue) && $job->prepend_to_queue) {
+            $sync_started_at = (int) \Mailchimp_Woocommerce_DB_Helpers::get_option('mailchimp-woocommerce-sync.started_at');
+            if ($sync_started_at > 0) {
+                $fire_at = $sync_started_at;
+                mailchimp_debug('action_scheduler. '.get_class($job), "Pushed job {$job_id} to the front of the queue for live traffic");
+            }
+        }
+
+        $action = as_schedule_single_action( $fire_at, get_class($job), $action_args, "mc-woocommerce");
       
         if (!empty($existing_actions)) {
             mailchimp_debug('action_scheduler.reschedule_job', get_class($job) . ($delay > 0 ? ' restarts in '.$delay. ' seconds' : ' re-queued' ) . $message . $attempts);
-        } 
-        else {
-            mailchimp_log('action_scheduler.queue_job', get_class($job) . ($delay > 0 ? ' starts in '.$delay. ' seconds' : ' queued' ) . $message . $attempts);
+        } else if (!empty($action)) {
+            mailchimp_log('action_scheduler.queue_job', get_class($job) . ($delay > 0 ? ' starts in '.$delay. ' seconds' : ' queued' ) . $message . $attempts." with id {$action}");
+        } else {
+            mailchimp_debug("action_scheduler.queue_job.fail", get_class($job). " :: no action id was saved while trying to schedule action!");
         }
     
         return $action;	
-    }
-    else {
+    } else {
         $job->set_attempts(0);
         mailchimp_log('action_scheduler.fail_job', get_class($job) . ' cancelled. Too many attempts' . $message . $attempts);
         return false;
@@ -888,6 +902,16 @@ function mailchimp_get_customer_lookup_count() {
 }
 
 /**
+ * @return int
+ */
+function mailchimp_get_customer_lookup_count_all() {
+    global $wpdb;
+    $query = "SELECT COUNT(email) as distinct_count FROM {$wpdb->prefix}wc_customer_lookup";
+
+    return $wpdb->get_var($query);
+}
+
+/**
  * @param $type
  * @return array|null|object
  */
@@ -909,6 +933,49 @@ function mailchimp_count_posts($type) {
         $response[$post->post_status] = $post->num_posts;
     }
     return $response;
+}
+
+/**
+ * @param $resource
+ * @param $by
+ * @return bool|null
+ */
+function mailchimp_register_synced_resource($resource, $by = 1) {
+    if (!in_array($resource, array('orders', 'products', 'customers', 'coupons'))) {
+        return null;
+    }
+    // if we're done syncing we don't want to keep increasing this number
+    if (mailchimp_is_done_syncing()) {
+        return null;
+    }
+    return Mailchimp_Woocommerce_DB_Helpers::increment("mailchimp-woocommerce-sync.{$resource}.count", $by);
+}
+
+/**
+ * @param $resource
+ * @return int
+ */
+function mailchimp_get_synced_resource_count($resource) {
+    if (!in_array($resource, array('orders', 'products', 'customers', 'coupons'))) {
+        return 0;
+    }
+    return (int) Mailchimp_Woocommerce_DB_Helpers::get_option("mailchimp-woocommerce-sync.{$resource}.count", 0);
+}
+
+/**
+ * @return object|null
+ */
+function mailchimp_get_local_sync_counts() {
+    // this will only work if they clicked on a start sync after this feature was added in October 2024
+    if (!Mailchimp_Woocommerce_DB_Helpers::get_option("mailchimp-woocommerce-sync.internal_counter")) {
+        return null;
+    }
+    return (object) array(
+        'orders' => mailchimp_get_synced_resource_count('orders'),
+        'products' => mailchimp_get_synced_resource_count('products'),
+        'customers' => mailchimp_get_synced_resource_count('customers'),
+        'coupons' => mailchimp_get_synced_resource_count('coupons'),
+    );
 }
 
 /**
@@ -1277,6 +1344,20 @@ function mailchimp_is_done_syncing() {
     else return ($sync_completed_at >= $sync_started_at);
 }
 
+/**
+ * @return bool
+ */
+function mailchimp_allowed_to_prepend_jobs_to_sync() {
+    return (bool) \Mailchimp_Woocommerce_DB_Helpers::get_option('mailchimp-woocommerce-sync.internal_counter');
+}
+
+/**
+ * @return bool
+ */
+function mailchimp_should_prepend_live_traffic_to_queue() {
+    return mailchimp_allowed_to_prepend_jobs_to_sync() && !mailchimp_is_done_syncing();
+}
+
 function run_mailchimp_woocommerce() {
     $env = mailchimp_environment_variables();
     $plugin = new MailChimp_WooCommerce($env->environment, $env->version);
@@ -1295,59 +1376,6 @@ function mailchimp_get_allowed_capability() {
         return 'manage_woocommerce';
     }
     return apply_filters('mailchimp_allowed_capability', $capability);
-}
-
-/**
- * @param MailChimp_WooCommerce_Customer $customer
- * @param null $subscribed
- *
- * @throws MailChimp_WooCommerce_Error
- * @throws MailChimp_WooCommerce_RateLimitError
- * @throws MailChimp_WooCommerce_ServerError
- */
-function mailchimp_update_member_with_double_opt_in(MailChimp_WooCommerce_Customer $customer, $subscribed = null)
-{
-    if (!mailchimp_is_configured()) return;
-
-    $api = mailchimp_get_api();
-
-    // if the customer has a flag to double opt in - we need to push this data over to MailChimp as pending
-    // before the order is submitted.
-    if ($subscribed) {
-        if ($customer->requiresDoubleOptIn()) {
-            try {
-                $list_id = mailchimp_get_list_id();
-                $merge_fields = $customer->getMergeFields();
-                $email = $customer->getEmailAddress();
-
-                try {
-                    $member = $api->member($list_id, $email);
-                    if ($member['status'] === 'transactional') {
-                        $api->update($list_id, $email, 'pending', $merge_fields);
-                        mailchimp_tell_system_about_user_submit($email, mailchimp_get_subscriber_status_options('pending'));
-                        mailchimp_log('double_opt_in', "Updated {$email} Using Double Opt In - previous status was '{$member['status']}'", $merge_fields);
-                    }
-                } catch (Exception $e) {
-                    // if the error code is 404 - need to subscribe them because it means they were not on the list.
-                    if ($e->getCode() == 404) {
-                        $api->subscribe($list_id, $email, 'pending', $merge_fields);
-                        mailchimp_tell_system_about_user_submit($email, mailchimp_get_subscriber_status_options(false));
-                        mailchimp_log('double_opt_in', "Subscribed {$email} Using Double Opt In", $merge_fields);
-                    } else {
-                        mailchimp_error('double_opt_in.update', $e->getMessage());
-                    }
-                }
-            } catch (Exception $e) {
-                mailchimp_error('double_opt_in.create', $e->getMessage());
-            }
-        } else {
-            // if we've set the wordpress user correctly on the customer
-            if (($wordpress_user = $customer->getWordpressUser())) {
-                $user_submit = new MailChimp_WooCommerce_User_Submit($wordpress_user->ID, '1', null);
-                $user_submit->handle();
-            }
-        }
-    }
 }
 
 /**
@@ -1421,13 +1449,13 @@ function mailchimp_settings_errors() {
  * @param string $status_if_new
  * @param null $order
  * @param null $gdpr_fields
- * @param false $update_status
+ * @param null|bool $live_traffic
  *
  * @throws MailChimp_WooCommerce_Error
  * @throws MailChimp_WooCommerce_RateLimitError
  * @throws MailChimp_WooCommerce_ServerError
  */
-function mailchimp_member_data_update($user_email = null, $language = null, $caller = '', $status_if_new = 'transactional', $order = null, $gdpr_fields = null, $update_status = false) {
+function mailchimp_member_data_update($user_email = null, $language = null, $caller = '', $status_if_new = 'transactional', $order = null, $gdpr_fields = null, $live_traffic = null) {
     mailchimp_debug('debug', "mailchimp_member_data_update", array(
         'user_email' => $user_email,
         'user_language' => $language,
@@ -1443,37 +1471,56 @@ function mailchimp_member_data_update($user_email = null, $language = null, $cal
     if ($caller !== 'cart' || !mailchimp_get_transient($caller . ".member.{$hash}")) {
         $list_id = mailchimp_get_list_id();
         try {
-            // try to get the member to update if already synced
-            $member = mailchimp_get_api()->member($list_id, $user_email);
-            // update member with new data
-            // if the member's subscriber status was transactional - and if we're passing in either one of these options below,
-            // we can attach the new status to the member.
-            if ($member['status'] === 'transactional' && in_array($status_if_new, array('subscribed', 'pending'))) {
-                $member['status'] = $status_if_new;
-            }
-            if (($member['status'] === 'transactional' && in_array($status_if_new, array('subscribed', 'pending'))) || $member['status'] === 'subscribed' || $member['status'] === 'pending') {
-                if (!empty($gdpr_fields) && is_array($gdpr_fields)) {
-                    $gdpr_fields_to_save = [];
-                    foreach ($gdpr_fields as $id => $value) {
-                        $gdpr_field['marketing_permission_id'] = $id;
-                        $gdpr_field['enabled'] = (bool) $value;
-                        $gdpr_fields_to_save[] = $gdpr_field;
-                    }
+            if (!empty($gdpr_fields) && is_array($gdpr_fields)) {
+                $gdpr_fields_to_save = [];
+                foreach ($gdpr_fields as $id => $value) {
+                    $gdpr_field['marketing_permission_id'] = $id;
+                    $gdpr_field['enabled'] = (bool) $value;
+                    $gdpr_fields_to_save[] = $gdpr_field;
                 }
             }
+
             $merge_fields = $order ? apply_filters('mailchimp_get_ecommerce_merge_tags', array(), $order) : array();
+
             if (!is_array($merge_fields)) $merge_fields = array();
-            if ($update_status && in_array($member['status'], array('unsubscribed', 'cleaned'))) {
-                $member['status'] = $status_if_new;
+
+            try {
+                $should_doi = $live_traffic && mailchimp_list_has_double_optin();
+            } catch (\Exception $e) {
+                $should_doi = false;
             }
-            $result = mailchimp_get_api()->update($list_id, $user_email, $member['status'], $merge_fields, null, $language, $gdpr_fields_to_save);
+
+            $result = mailchimp_get_api()
+                ->useAutoDoi($should_doi)
+                ->update(
+                    $list_id,
+                    $user_email,
+                    $status_if_new,
+                    $merge_fields,
+                    null,
+                    $language,
+                    $gdpr_fields_to_save,
+                    $caller === 'cart'
+                );
+
+            // if we are passing over a value that's not subscribed and mailchimp returns subscribed
+            // we need to set the user meta properly.
+            if (!in_array($status_if_new, ['subscribed', 'pending'], true) && in_array($result['status'], ['subscribed', 'pending'], true)) {
+                $user = get_user_by('email', $user_email);
+                if ($user && $user->ID > 0) {
+                    mailchimp_log('integration_logic', "mailchimp_member_data_update set the user meta for {$user_email} to subscribed because it was out of sync.");
+                    update_user_meta($user->ID, 'mailchimp_woocommerce_is_subscribed', '1');
+                }
+            }
+
             // set transient to prevent too many calls to update language
             mailchimp_set_transient($caller . ".member.{$hash}", true, 3600);
-            mailchimp_log($caller . '.member.updated', "Updated {$user_email} subscriber status to {$result['status']} and language to {$language}");
+            mailchimp_log($caller . '.member.updated', "Updated {$user_email} subscriber status to {$result['status']}".(!empty($language) ? "and language to {$language}" : ""));
         } catch (Exception $e) {
+            $merge_fields = $order ? apply_filters('mailchimp_get_ecommerce_merge_tags', array(), $order) : array();
+            if (!is_array($merge_fields)) $merge_fields = array();
+
             if ($e->getCode() == 404) {
-                $merge_fields = $order ? apply_filters('mailchimp_get_ecommerce_merge_tags', array(), $order) : array();
-                if (!is_array($merge_fields)) $merge_fields = array();
                 if (!empty($gdpr_fields) && is_array($gdpr_fields)) {
                     $gdpr_fields_to_save = [];
                     foreach ($gdpr_fields as $id => $value) {
@@ -1487,6 +1534,9 @@ function mailchimp_member_data_update($user_email = null, $language = null, $cal
                 // set transient to prevent too many calls to update language
                 mailchimp_set_transient($caller . ".member.{$hash}", true, 3600);
                 mailchimp_log($caller . '.member.created', "Added {$user_email} as transactional, setting language to [{$language}]");
+            } else if (strpos($e->getMessage(), 'compliance state') !== false) {
+                mailchimp_get_api()->update($list_id, $user_email, 'pending', $merge_fields);
+                mailchimp_log($caller . '.member.sync', "Update {$user_email} Using Double Opt In", $merge_fields);
             } else {
                 mailchimp_error($caller . '.member.sync.error', $e->getMessage());
             }
