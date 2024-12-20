@@ -1,159 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta name="viewport" content="width=device-width" />
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>WordPress &#8250; ReadMe</title>
-	<link rel="stylesheet" href="wp-admin/css/install.css?ver=20100228" type="text/css" />
-</head>
-<body>
-<h1 id="logo">
-	<a href="https://wordpress.org/"><img alt="WordPress" src="wp-admin/images/wordpress-logo.png" /></a>
-</h1>
-<h2>Project Overview</h2>
-<p>This project is a WordPress-based eCommerce application powered by WooCommerce. It includes features for product management, customer interaction, and seamless shopping experiences.</p>
+# WordPress eCommerce Application
 
-<h2>Table of Contents</h2>
-<ol>
-    <li><a href="#requirements">Requirements</a></li>
-    <li><a href="#installation">Installation</a></li>
-    <li><a href="#configuration">Configuration</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#development-workflow">Development Workflow</a></li>
-    <li><a href="#troubleshooting">Troubleshooting</a></li>
-</ol>
+This project is a WordPress-based eCommerce application powered by WooCommerce. It includes features for product management, customer interaction, and seamless shopping experiences.
 
-<h2 id="requirements">Requirements</h2>
-<ul>
-    <li><strong>Web Server:</strong> Apache/Nginx</li>
-    <li><strong>Database:</strong> MySQL 5.6+ or MariaDB 10.0+</li>
-    <li><strong>PHP:</strong> Version 7.4 or later</li>
-    <li><strong>WordPress:</strong> Version 6.0 or later</li>
-    <li><strong>WooCommerce:</strong> Version 7.0 or later</li>
-    <li><strong>Browser:</strong> Modern web browser (e.g., Chrome, Firefox, Edge)</li>
-</ul>
+## Table of Contents
+1. [Requirements](#requirements)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [Features](#features)
+5. [Development Workflow](#development-workflow)
+6. [Troubleshooting](#troubleshooting)
 
-<h2 id="installation">Installation</h2>
+## Requirements
+- **Web Server:** Apache/Nginx
+- **Database:** MySQL 5.6+ or MariaDB 10.0+
+- **PHP:** Version 7.4 or later
+- **WordPress:** Version 6.0 or later
+- **WooCommerce:** Version 7.0 or later
+- **Browser:** Modern web browser (e.g., Chrome, Firefox, Edge)
 
-<h3>Step 1: Setup Local Server</h3>
-<ol>
-    <li>Install a local server environment (e.g., XAMPP, WAMP, or MAMP).</li>
-    <li>Enable the Apache <code>mod_rewrite</code> module.</li>
-</ol>
+## Installation
 
-<h3>Step 2: Install WordPress</h3>
-<ol>
-    <li>Download WordPress from <a href="https://wordpress.org/">wordpress.org</a>.</li>
-    <li>Extract the files into your server's web directory (e.g., <code>htdocs/ecommerce/</code>).</li>
-    <li>Create a new MySQL database for the application.</li>
-    <li>Configure the <code>wp-config.php</code> file with database details.</li>
-</ol>
+### Step 1: Setup Local Server
+1. Install a local server environment (e.g., XAMPP, WAMP, or MAMP).
+2. Enable the Apache `mod_rewrite` module.
 
-<h3>Step 3: Install WooCommerce</h3>
-<ol>
-    <li>Log in to the WordPress admin dashboard.</li>
-    <li>Navigate to <strong>Plugins &gt; Add New</strong>.</li>
-    <li>Search for "WooCommerce" and install it.</li>
-    <li>Activate the plugin and follow the setup wizard.</li>
-</ol>
+### Step 2: Install WordPress
+1. Download WordPress from [wordpress.org](https://wordpress.org/).
+2. Extract the files into your server's web directory (e.g., `htdocs/ecommerce/`).
+3. Create a new MySQL database for the application.
+4. Configure the `wp-config.php` file with database details.
 
-<h3>Step 4: Install Required Plugins</h3>
-<p>Install any additional plugins required for the project.</p>
+### Step 3: Install WooCommerce
+1. Log in to the WordPress admin dashboard.
+2. Navigate to **Plugins > Add New**.
+3. Search for "WooCommerce" and install it.
+4. Activate the plugin and follow the setup wizard.
 
-<h3>Step 5: Theme Installation</h3>
-<ol>
-    <li>Install the Woostify theme (or your chosen WooCommerce-compatible theme).</li>
-    <li>Activate the theme and configure its settings via <strong>Appearance &gt; Customize</strong>.</li>
-</ol>
+### Step 4: Install Required Plugins
+Install any additional plugins required for the project.
 
-<h2 id="configuration">Configuration</h2>
+### Step 5: Theme Installation
+1. Install the Woostify theme (or your chosen WooCommerce-compatible theme).
+2. Activate the theme and configure its settings via **Appearance > Customize**.
 
-<h3>Permalinks</h3>
-<ol>
-    <li>Navigate to <strong>Settings &gt; Permalinks</strong>.</li>
-    <li>Select the "Post name" structure.</li>
-    <li>Save changes to flush rewrite rules.</li>
-</ol>
+## Configuration
 
-<h3>WooCommerce Settings</h3>
-<ol>
-    <li>Go to <strong>WooCommerce &gt; Settings</strong> and configure:</li>
-    <ul>
-        <li>General: Store address, currency options.</li>
-        <li>Products: Measurement units, review settings.</li>
-        <li>Payments: Enable and configure payment gateways.</li>
-        <li>Shipping: Define shipping zones and methods.</li>
-    </ul>
-</ol>
+### Permalinks
+1. Navigate to **Settings > Permalinks**.
+2. Select the "Post name" structure.
+3. Save changes to flush rewrite rules.
 
-<h3>Product Management</h3>
-<ol>
-    <li>Add products via <strong>Products &gt; Add New</strong>.</li>
-    <li>Include essential details:
-        <ul>
-            <li>Title, description, and short description.</li>
-            <li>Price and sale price.</li>
-            <li>Product image and gallery.</li>
-            <li>Categories and tags.</li>
-        </ul>
-    </li>
-</ol>
+### WooCommerce Settings
+1. Go to **WooCommerce > Settings** and configure:
+   - **General:** Store address, currency options.
+   - **Products:** Measurement units, review settings.
+   - **Payments:** Enable and configure payment gateways.
+   - **Shipping:** Define shipping zones and methods.
 
-<h2 id="features">Features</h2>
-<ul>
-    <li><strong>Dynamic Product Catalog:</strong> Add, edit, and manage products easily.</li>
-    <li><strong>User Authentication:</strong> Customer registration and login.</li>
-    <li><strong>Payment Integration:</strong> Secure and flexible payment gateways.</li>
-    <li><strong>Shipping Options:</strong> Configurable shipping methods and zones.</li>
-    <li><strong>Customizable UI:</strong> Theme customization for branding.</li>
-</ul>
+### Product Management
+1. Add products via **Products > Add New**.
+2. Include essential details:
+   - Title, description, and short description.
+   - Price and sale price.
+   - Product image and gallery.
+   - Categories and tags.
 
-<h2 id="development-workflow">Development Workflow</h2>
-<ol>
-    <li><strong>Local Development:</strong>
-        <ul>
-            <li>Use a local environment for testing changes.</li>
-            <li>Regularly update WordPress core, themes, and plugins.</li>
-        </ul>
-    </li>
-    <li><strong>Version Control:</strong>
-        <ul>
-            <li>Use Git for version control. Add <code>.gitignore</code> to exclude unnecessary files.</li>
-        </ul>
-    </li>
-    <li><strong>Testing:</strong>
-        <ul>
-            <li>Test functionalities like checkout, product updates, and user registration.</li>
-        </ul>
-    </li>
-</ol>
+## Features
+- **Dynamic Product Catalog:** Add, edit, and manage products easily.
+- **User Authentication:** Customer registration and login.
+- **Payment Integration:** Secure and flexible payment gateways.
+- **Shipping Options:** Configurable shipping methods and zones.
+- **Customizable UI:** Theme customization for branding.
 
-<h2 id="troubleshooting">Troubleshooting</h2>
+## Development Workflow
 
-<h3>Common Issues and Fixes</h3>
-<ol>
-    <li><strong>Permalink Issues:</strong>
-        <ul>
-            <li>Go to <strong>Settings &gt; Permalinks</strong> and save changes to flush rewrite rules.</li>
-            <li>Ensure <code>.htaccess</code> file is correctly configured.</li>
-        </ul>
-    </li>
-    <li><strong>Broken Links:</strong>
-        <ul>
-            <li>Verify WooCommerce and WordPress settings for URL structures.</li>
-            <li>Check custom menu items and update their links.</li>
-        </ul>
-    </li>
-    <li><strong>Plugin Conflicts:</strong>
-        <ul>
-            <li>Deactivate all plugins and reactivate them one by one to identify conflicts.</li>
-        </ul>
-    </li>
-    <li><strong>Theme Issues:</strong>
-        <ul>
-            <li>Switch to a default theme (e.g., Twenty Twenty-Three) to check for theme-related errors.</li>
-        </ul>
-    </li>
-</ol>
-</body>
-</html>
+### Local Development
+- Use a local environment for testing changes.
+- Regularly update WordPress core, themes, and plugins.
+
+### Version Control
+- Use Git for version control. Add `.gitignore` to exclude unnecessary files.
+
+### Testing
+- Test functionalities like checkout, product updates, and user registration.
+
+## Troubleshooting
+
+### Common Issues and Fixes
+
+1. **Permalink Issues:**
+   - Go to **Settings > Permalinks** and save changes to flush rewrite rules.
+   - Ensure `.htaccess` file is correctly configured.
+
+2. **Broken Links:**
+   - Verify WooCommerce and WordPress settings for URL structures.
+   - Check custom menu items and update their links.
+
+3. **Plugin Conflicts:**
+   - Deactivate all plugins and reactivate them one by one to identify conflicts.
+
+4. **Theme Issues:**
+   - Switch to a default theme (e.g., Twenty Twenty-Three) to check for theme-related errors.
+### Identifiants administrateur principal
+-najikamal100@gmail.com mdp:90moXo4j%#nHdrI5M9
